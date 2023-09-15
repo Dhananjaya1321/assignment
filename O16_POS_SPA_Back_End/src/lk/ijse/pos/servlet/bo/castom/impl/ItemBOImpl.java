@@ -7,6 +7,7 @@ import lk.ijse.pos.servlet.dao.castom.impl.ItemDAOImpl;
 import lk.ijse.pos.servlet.dto.ItemDTO;
 import lk.ijse.pos.servlet.entity.Item;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -14,23 +15,23 @@ public class ItemBOImpl implements ItemBO {
     private final ItemDAOImpl itemBO = (ItemDAOImpl) FactoryDAO.getFactoryDAO().setDAOImpl(DAOType.ITEM);
 
     @Override
-    public boolean addItem(ItemDTO dto) throws SQLException, ClassNotFoundException {
-        return itemBO.add(new Item(dto.getCode(), dto.getName(), dto.getQty(), dto.getPrice()));
+    public boolean addItem(ItemDTO dto, Connection connection) throws SQLException, ClassNotFoundException {
+        return itemBO.add(new Item(dto.getCode(), dto.getName(), dto.getQty(), dto.getPrice()),connection);
     }
 
     @Override
-    public boolean updateItem(ItemDTO dto) throws SQLException, ClassNotFoundException {
-        return itemBO.update(new Item(dto.getCode(), dto.getName(), dto.getQty(), dto.getPrice()));
+    public boolean updateItem(ItemDTO dto,Connection connection) throws SQLException, ClassNotFoundException {
+        return itemBO.update(new Item(dto.getCode(), dto.getName(), dto.getQty(), dto.getPrice()),connection);
     }
 
     @Override
-    public boolean deleteItem(ItemDTO dto) throws SQLException, ClassNotFoundException {
-        return itemBO.delete(new Item(dto.getCode()));
+    public boolean deleteItem(ItemDTO dto,Connection connection) throws SQLException, ClassNotFoundException {
+        return itemBO.delete(new Item(dto.getCode()),connection);
     }
 
     @Override
-    public ArrayList<ItemDTO> getAllItems() throws SQLException, ClassNotFoundException {
-        ArrayList<Item> all = itemBO.getAll();
+    public ArrayList<ItemDTO> getAllItems(Connection connection) throws SQLException, ClassNotFoundException {
+        ArrayList<Item> all = itemBO.getAll(connection);
         ArrayList<ItemDTO> itemDTOS = new ArrayList<>();
         for (Item i : all) {
             itemDTOS.add(

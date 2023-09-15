@@ -11,10 +11,7 @@ import lk.ijse.pos.servlet.dto.ItemDTO;
 import lk.ijse.pos.servlet.entity.CustomEntity;
 import lk.ijse.pos.servlet.entity.Item;
 import lk.ijse.pos.servlet.entity.Order;
-import lk.ijse.pos.servlet.listener.Listener;
-import org.apache.commons.dbcp2.BasicDataSource;
 
-import javax.servlet.ServletContext;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,8 +22,8 @@ public class OrderBOImpl implements OrderBO {
     private final ItemDAOImpl itemDAOerDAO = (ItemDAOImpl) FactoryDAO.getFactoryDAO().setDAOImpl(DAOType.ITEM);
 
     @Override
-    public ArrayList<CustomDTO> searchOrder(CustomDTO dto) throws SQLException, ClassNotFoundException {
-        ArrayList<CustomEntity> customEntities = queryDAO.searchOrder(new CustomEntity(dto.getOrderID()));
+    public ArrayList<CustomDTO> searchOrder(CustomDTO dto,Connection connection) throws SQLException, ClassNotFoundException {
+        ArrayList<CustomEntity> customEntities = queryDAO.searchOrder(new CustomEntity(dto.getOrderID()),connection);
         ArrayList<CustomDTO> customDTOS = new ArrayList<>();
         for (CustomEntity c : customEntities) {
             customDTOS.add(
@@ -37,19 +34,15 @@ public class OrderBOImpl implements OrderBO {
     }
 
     @Override
-    public boolean purchaseOrder(CustomDTO dto) throws SQLException, ClassNotFoundException {
-        ServletContext servletContext = Listener.getServletContext();
-        BasicDataSource dataSource = (BasicDataSource) servletContext.getAttribute("dbcp");
-        Connection connection = dataSource.getConnection();
-
+    public boolean purchaseOrder(CustomDTO dto,Connection connection) throws SQLException, ClassNotFoundException {
         connection.setAutoCommit(false);
         try {
-            boolean isAdded = orderDAO.add(new Order(dto.getOrderID(), dto.getDate(), dto.getId()));
+            boolean isAdded = orderDAO.add(new Order(dto.getOrderID(), dto.getDate(), dto.getId()),connection);
             if (isAdded) {
                 ArrayList<ItemDTO> itemDTOS = dto.getOrderDetails();
                 int count = 0;
                 for (ItemDTO i : itemDTOS) {
-                    boolean isAddedOrderDetails = queryDAO.addOrderDetails(new CustomEntity(dto.getOrderID(), i.getCode(), i.getQty(), i.getPrice()));
+                    boolean isAddedOrderDetails = queryDAO.addOrderDetails(new CustomEntity(dto.getOrderID(), i.getCode(), i.getQty(), i.getPrice()),connection);
                     if (isAddedOrderDetails) {
                         count++;
                     }
@@ -61,7 +54,7 @@ public class OrderBOImpl implements OrderBO {
                 count = 0;
                 ArrayList<ItemDTO> newQTYs = dto.getNewQTYs();
                 for (ItemDTO i : newQTYs) {
-                    boolean isUpdated = itemDAOerDAO.updateItemQTY(new Item(i.getCode(), i.getQty()));
+                    boolean isUpdated = itemDAOerDAO.updateItemQTY(new Item(i.getCode(), i.getQty()),connection);
                     if (isUpdated) {
                         count++;
                     }

@@ -5,15 +5,19 @@ import lk.ijse.pos.servlet.bo.FactoryBO;
 import lk.ijse.pos.servlet.bo.castom.impl.OrderBOImpl;
 import lk.ijse.pos.servlet.dto.CustomDTO;
 import lk.ijse.pos.servlet.dto.ItemDTO;
+import lk.ijse.pos.servlet.listener.Listener;
 import lk.ijse.pos.servlet.util.ResponseUtil;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import javax.json.*;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -24,8 +28,10 @@ public class PurchaseOrderServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        try {
-            ArrayList<CustomDTO> customDTOS = orderBO.searchOrder(new CustomDTO(req.getParameter("oid")));
+         ServletContext servletContext = Listener.getServletContext();
+        BasicDataSource dataSource = (BasicDataSource) servletContext.getAttribute("dbcp");
+        try (Connection connection= dataSource.getConnection()){
+            ArrayList<CustomDTO> customDTOS = orderBO.searchOrder(new CustomDTO(req.getParameter("oid")),connection);
 
             JsonArrayBuilder allOrders = Json.createArrayBuilder();
             for (CustomDTO c: customDTOS) {
@@ -51,7 +57,9 @@ public class PurchaseOrderServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         JsonObject orderJsonOb = Json.createReader(req.getReader()).readObject();
 
-        try {
+         ServletContext servletContext = Listener.getServletContext();
+        BasicDataSource dataSource = (BasicDataSource) servletContext.getAttribute("dbcp");
+        try (Connection connection= dataSource.getConnection()){
             CustomDTO customDTO=new CustomDTO();
             customDTO.setOrderID(orderJsonOb.getString("oid"));
             customDTO.setDate(orderJsonOb.getString("date"));
@@ -81,7 +89,7 @@ public class PurchaseOrderServlet extends HttpServlet {
             customDTO.setNewQTYs(itemQTYDTOS);
 
 
-            if (orderBO.purchaseOrder(customDTO)) {
+            if (orderBO.purchaseOrder(customDTO,connection)) {
                 resp.getWriter().print(ResponseUtil.genJson("Success", "Successfully Added.!"));
             }else {
                 resp.getWriter().print(ResponseUtil.genJson("Error", "Error"));
